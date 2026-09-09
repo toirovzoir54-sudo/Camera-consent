@@ -1,1 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Consent</title>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 25px;
+    }
+
+    .box {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+    }
+
+    video {
+      width: 100%;
+      max-width: 450px;
+      border-radius: 12px;
+      margin-top: 15px;
+      transform: scaleX(-1);
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 450px;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 14px 22px;
+      margin: 8px;
+      font-size: 16px;
+    }
+
+    #allow {
+      background: #2196f3;
+      color: white;
+    }
+
+    #take {
+      background: #4caf50;
+      color: white;
+      display: none;
+    }
+
+    #send {
+      background: #673ab7;
+      color: white;
+      display: none;
+    }
+
+    #cancel {
+      background: #ddd;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h2>Photo Permission</h2>
+
+  <p>
+    Do you agree to let this website use your
+    front camera to take a photo?
+  </p>
+
+  <button id="allow">Allow</button>
+  <button id="cancel">Cancel</button>
+
+  <video id="video" autoplay playsinline></video>
+
+  <br>
+
+  <button id="take">Take Photo</button>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <br>
+
+  <button id="send">Send Photo</button>
+
+  <p id="status"></p>
+
+</div>
+
+<script>
+
+const allow = document.getElementById("allow");
+const cancel = document.getElementById("cancel");
+const take = document.getElementById("take");
+const send = document.getElementById("send");
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const status = document.getElementById("status");
+
+let stream = null;
+let photoBlob = null;
+
+
+/* Allow camera */
+
+allow.addEventListener("click", async () => {
+
+  try {
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: {
+          ideal: "user"
+        }
+      },
+      audio: false
+    });
+
+    video.srcObject = stream;
+
+    allow.style.display = "none";
+    cancel.style.display = "none";
+    take.style.display = "inline-block";
+
+    status.textContent =
+      "Front camera is active. Press Take Photo.";
+
+  } catch (error) {
+
+    status.textContent =
+      "Camera permission was denied.";
+
+    console.error(error);
+
+  }
+
+});
+
+
+/* Cancel */
+
+cancel.addEventListener("click", () => {
+
+  status.textContent =
+    "You cancelled the camera permission.";
+
+});
+
+
+/* Take photo */
+
+take.addEventListener("click", () => {
+
+  if (!video.videoWidth) {
+    status.textContent = "Camera is not ready.";
+    return;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+
+  /*
+    Mirror the selfie photo so it looks
+    natural like the front camera preview.
+  */
+
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  canvas.style.display = "block";
+
+  canvas.toBlob((blob) => {
+
+    photoBlob = blob;
+
+    send.style.display = "inline-block";
+
+    status.textContent =
+      "Photo taken. Press Send Photo to send it.";
+
+  }, "image/jpeg", 0.9);
+
+});
+
+
+/* Send */
+
+send.addEventListener("click", async () => {
+
+  if (!photoBlob) {
+    return;
+  }
+
+  status.textContent = "Sending...";
+
+  /*
+    IMPORTANT:
+    The Telegram Bot Token must NOT be placed here.
+
+    Later we will send this photo to your
+    secure backend, and the backend will
+    send it to Telegram.
+  */
+
+  status.textContent =
+    "Photo is ready to be sent.";
+
+});
+
+</script>
+
+</body>
+</html>
